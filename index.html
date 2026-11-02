@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Suivi collyres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f7fa;--surface:#fff;--ink:#14263a;--mute:#5d7287;--line:#dbe5ec;--ok:#1b8a5a;
+--c0:#2f7de1;--c1:#d6498a;--c2:#e08a1e;--c3:#7a5bd6;--c4:#0f9aa8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1822;--surface:#172636;--ink:#e8f0f6;--mute:#93a8ba;--line:#26394b;--ok:#3ccf8e}}
+:root[data-theme="dark"]{--bg:#0e1822;--surface:#172636;--ink:#e8f0f6;--mute:#93a8ba;--line:#26394b;--ok:#3ccf8e}
+html{scroll-padding-top:env(safe-area-inset-top,0px);color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;max-width:520px;margin-inline:auto;padding:16px 16px 40px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.nav{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:22px;cursor:pointer}
+.nav:disabled{opacity:.3}
+.date{text-align:center;flex:1}
+.date h1{font-size:25px;line-height:1.15;margin:0;font-weight:700;text-transform:capitalize}
+.date p{margin:4px 0 0;color:var(--mute);font-size:15px}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:14px 2px 8px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;min-width:46px;padding:7px 4px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:center;font:inherit;font-size:12px;cursor:pointer}
+.chip b{display:block;font-size:16px}
+.chip i{display:block;width:8px;height:8px;border-radius:50%;margin:5px auto 0;background:var(--line)}
+.chip i.full{background:var(--ok)}.chip i.part{background:var(--c2)}
+.chip.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 4px}
+.prog div{height:100%;background:var(--ok);width:0;transition:width .25s}
+.cnt{color:var(--mute);font-size:14px;margin:0 0 14px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--col);border-radius:16px;padding:14px 14px 16px;margin-bottom:12px}
+.card h2{margin:0 0 2px;font-size:19px;font-weight:700}
+.card small{color:var(--mute);font-size:14px}
+.dots{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:10px;margin-top:12px}
+.all{margin-top:10px;background:none;border:1px dashed var(--col);color:var(--col);border-radius:12px;padding:12px;width:100%;font:600 15px Figtree,system-ui,sans-serif;cursor:pointer}
+.dot{width:100%;height:68px;border-radius:18px;border:2.5px solid var(--col);background:transparent;color:var(--col);font:700 18px Figtree,system-ui,sans-serif;cursor:pointer;display:grid;place-items:center;transition:transform .12s,background .15s}
+.dot:active{transform:scale(.92)}
+.dot.on{background:var(--col);color:#fff}
+.dot:focus-visible,.nav:focus-visible,.chip:focus-visible,.today:focus-visible{outline:3px solid var(--c0);outline-offset:2px}
+.done{color:var(--ok);font-weight:600;font-size:14px;margin-left:6px}
+.today{display:block;margin:6px auto 0;background:none;border:none;color:var(--c0);font:600 15px Figtree,system-ui,sans-serif;cursor:pointer;padding:8px}
+.empty{color:var(--mute);text-align:center;padding:30px 0}
+[hidden]{display:none!important}
+.tools{display:flex;gap:10px;margin-top:16px}
+.tools button{flex:1;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px Figtree,system-ui,sans-serif;cursor:pointer}
+#box{width:100%;height:90px;margin-top:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:13px monospace;padding:8px}
+#msg{color:var(--mute);font-size:13px;text-align:center;margin:8px 0 0}
+.note{color:var(--mute);font-size:13px;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="top">
+  <button class="nav" id="prev" aria-label="Jour précédent">‹</button>
+  <div class="date"><h1 id="title"></h1><p id="sub"></p></div>
+  <button class="nav" id="next" aria-label="Jour suivant">›</button>
+</div>
+<div class="strip" id="strip" role="tablist" aria-label="Jours"></div>
+<button class="today" id="today">Revenir à aujourd’hui</button>
+<div class="prog"><div id="bar"></div></div>
+<p class="cnt" id="cnt"></p>
+<div id="cards"></div>
+<p class="note">Touche une case pour cocher une prise, retouche la dernière pour l’annuler. Glisse à gauche ou à droite pour changer de jour. Enregistré sur ce téléphone et en ligne.</p>
+
+<div class="tools"><button id="bk">Sauvegarder</button><button id="rs">Restaurer</button></div>
+<textarea id="box" hidden aria-label="Sauvegarde"></textarea>
+<button class="tools" id="okb" hidden style="width:100%;margin-top:8px;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px Figtree,system-ui,sans-serif">Valider la restauration</button>
+<p id="msg"></p>
+<script>
+// Traitement : 23/10/2026 → 21/12/2026 (60 jours). Dates en jours depuis le 23/10.
+var START=Date.UTC(2026,9,23), DAYS=60, DAY=86400000;
+var MEDS=[
+ {id:'naabak',name:'Naabak 4,9 %',per:2,from:0,to:59,col:'var(--c0)'},
+ {id:'tobracort',name:'Tobracort',per:4,from:0,to:4,col:'var(--c1)'},
+ {id:'unicrom',name:'Unicrom 2 %',per:4,from:0,to:59,col:'var(--c2)'},
+ {id:'carteol',name:'Cartéol',per:1,from:0,to:29,col:'var(--c3)'},
+ {id:'lotemax',name:'Lotemax',per:4,from:3,to:17,col:'var(--c4)'}
+];
+var KEY='suivi-collyres-v1', LAST_DONE=10; // prises déjà cochées dans son Excel jusqu’au 02/11
+var TS={};try{TS=JSON.parse(localStorage.getItem('suivi-collyres-v1-t')||'{}');}catch(e){}
+var data=load(), sel=0;
+function load(){
+  try{var s=localStorage.getItem(KEY);if(s)return JSON.parse(s);}catch(e){}
+  var d={};
+  for(var i=0;i<=LAST_DONE;i++){d[i]={};MEDS.forEach(function(m){if(i>=m.from&&i<=m.to)d[i][m.id]=m.per;});}
+  d[1].tobracort=3;d[1].unicrom=3; // le 24/10 : 3 prises sur 4 cochées
+  return d;
+}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(KEY+'-t',JSON.stringify(TS));}catch(e){}}
+function save(){saveLocal();sync();}
+function sk(i,id){return i+'_'+id;}
+function active(i){return MEDS.filter(function(m){return i>=m.from&&i<=m.to;});}
+function got(i,id){return (data[i]&&data[i][id])||0;}
+function dt(i){return new Date(START+i*DAY);}
+function fmt(i,o){return dt(i).toLocaleDateString('fr-FR',Object.assign({timeZone:'UTC'},o));}
+function status(i){var a=active(i),t=0,g=0;a.forEach(function(m){t+=m.per;g+=got(i,m.id);});return {t:t,g:g};}
+function todayIdx(){var n=new Date(),k=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate());return Math.max(0,Math.min(DAYS-1,Math.round((k-START)/DAY)));}
+function render(){
+  document.getElementById('title').textContent=fmt(sel,{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('sub').textContent=sel===todayIdx()?'Aujourd’hui':'Jour '+(sel+1)+' sur '+DAYS;
+  document.getElementById('prev').disabled=sel===0;
+  document.getElementById('next').disabled=sel===DAYS-1;
+  var st=status(sel);
+  document.getElementById('bar').style.width=(st.t?st.g/st.t*100:0)+'%';
+  document.getElementById('cnt').textContent=st.t?st.g+' prises sur '+st.t:'';
+  var c=document.getElementById('cards');c.innerHTML='';
+  var a=active(sel);
+  if(!a.length)c.innerHTML='<p class="empty">Aucun traitement ce jour.</p>';
+  a.forEach(function(m){
+    var n=got(sel,m.id),card=document.createElement('div');
+    card.className='card';card.style.setProperty('--col',m.col);
+    var h=document.createElement('h2');h.textContent=m.name;
+    if(n===m.per){var s=document.createElement('span');s.className='done';s.textContent='Terminé';h.appendChild(s);}
+    var sm=document.createElement('small');
+    sm.textContent=m.per+(m.per>1?' fois':' fois')+' par jour · jusqu’au '+fmt(m.to,{day:'numeric',month:'long'});
+    var row=document.createElement('div');row.className='dots';
+    for(var k=0;k<m.per;k++)(function(k){
+      var b=document.createElement('button');b.className='dot'+(k<n?' on':'');
+      b.textContent=k<n?'✓':String(k+1);
+      b.setAttribute('aria-label',m.name+', prise '+(k+1)+(k<n?' faite':' à faire'));
+      b.onclick=function(){
+        if(!data[sel])data[sel]={};
+        data[sel][m.id]=(k<got(sel,m.id))?k:k+1;TS[sk(sel,m.id)]=Date.now();
+        if(navigator.vibrate)navigator.vibrate(15);
+        save();render();
+      };
+      row.appendChild(b);
+    })(k);
+    card.appendChild(h);card.appendChild(sm);card.appendChild(row);
+    if(m.per>1&&n<m.per){var all=document.createElement('button');all.className='all';all.textContent='Tout cocher';
+      all.onclick=function(){if(!data[sel])data[sel]={};data[sel][m.id]=m.per;TS[sk(sel,m.id)]=Date.now();save();render();};card.appendChild(all);}
+    c.appendChild(card);
+  });
+  var strip=document.getElementById('strip');strip.innerHTML='';
+  for(var i=0;i<DAYS;i++)(function(i){
+    var s=status(i),b=document.createElement('button');
+    b.className='chip'+(i===sel?' sel':'');
+    var cls=s.t&&s.g===s.t?'full':(s.g>0?'part':'');
+    b.innerHTML='<span>'+fmt(i,{weekday:'short'}).replace('.','')+'</span><b>'+dt(i).getUTCDate()+'</b><i class="'+cls+'"></i>';
+    b.setAttribute('aria-label',fmt(i,{weekday:'long',day:'numeric',month:'long'}));
+    b.onclick=function(){sel=i;render();};
+    strip.appendChild(b);
+    if(i===sel)setTimeout(function(){b.scrollIntoView({inline:'center',block:'nearest'});},0);
+  })(i);
+}
+document.getElementById('prev').onclick=function(){if(sel>0){sel--;render();}};
+document.getElementById('next').onclick=function(){if(sel<DAYS-1){sel++;render();}};
+document.getElementById('today').onclick=function(){sel=todayIdx();render();};
+var box=document.getElementById('box'),msg=document.getElementById('msg'),ok=document.getElementById('okb');
+document.getElementById('bk').onclick=function(){
+  var t='COLLYRES1:'+JSON.stringify(data);
+  box.hidden=false;box.value=t;ok.hidden=true;box.select();
+  if(navigator.share){navigator.share({text:t}).catch(function(){});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(t).catch(function(){});}
+  msg.textContent='Envoie-toi ce texte (message, notes…) pour le garder en lieu sûr.';
+};
+document.getElementById('rs').onclick=function(){box.hidden=false;box.value='';ok.hidden=false;msg.textContent='Colle ta sauvegarde, puis valide.';};
+ok.onclick=function(){
+  try{var v=box.value.trim();if(v.indexOf('COLLYRES1:')!==0)throw 0;data=JSON.parse(v.slice(10));Object.keys(data).forEach(function(i){Object.keys(data[i]).forEach(function(id){TS[sk(i,id)]=Date.now();});});save();box.hidden=true;ok.hidden=true;msg.textContent='Sauvegarde restaurée.';render();}
+  catch(e){msg.textContent='Texte non reconnu.';}
+};
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+// ---- Synchronisation en ligne (Firebase Realtime Database, via l’API REST) ----
+var DB_URLS=['https://track-4607f-default-rtdb.europe-west1.firebasedatabase.app','https://track-4607f-default-rtdb.firebaseio.com'],DB_OK=null; // la page essaie les deux adresses possibles
+var code=null,cloud=document.createElement('div');
+cloud.className='note';cloud.style.margin='0 0 12px';
+document.getElementById('cards').before(cloud);
+try{code=(location.hash||'').slice(1)||localStorage.getItem(KEY+'-code');}catch(e){}
+function validCode(c){return /^[A-Za-z0-9_-]{20,}$/.test(c||'');}
+function say(t){cloud.textContent=t;}
+function askCode(){
+  cloud.innerHTML='';
+  var p=document.createElement('p');p.textContent='Code secret pour enregistrer en ligne (20 caractères minimum, lettres, chiffres, - ou _) :';
+  var i=document.createElement('input');i.style.cssText='width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:16px Figtree,system-ui,sans-serif';
+  var b=document.createElement('button');b.textContent='Activer';b.className='all';b.style.setProperty('--col','var(--c0)');
+  b.onclick=function(){if(!validCode(i.value.trim())){p.textContent='Code invalide : 20 caractères minimum, sans espace ni accent.';return;}code=i.value.trim();try{localStorage.setItem(KEY+'-code',code);}catch(e){}sync();};
+  cloud.appendChild(p);cloud.appendChild(i);cloud.appendChild(b);
+}
+function sync(){
+  if(!DB_URLS.length)return;
+  if(!validCode(code)){askCode();return;}
+  try{localStorage.setItem(KEY+'-code',code);}catch(e){}
+  function get(i){var u=DB_URLS[i]+'/c/'+code+'.json';return fetch(u).then(function(r){if(!r.ok)throw 0;DB_OK=DB_URLS[i];return r.json();}).catch(function(e){if(!DB_OK&&i+1<DB_URLS.length)return get(i+1);throw e;});}
+  get(DB_OK?DB_URLS.indexOf(DB_OK):0).then(function(remote){
+    remote=remote||{};var changed=false,up={},n=0;
+    Object.keys(data).forEach(function(i){Object.keys(data[i]).forEach(function(id){
+      var k=sk(i,id),l=data[i][id],lt=TS[k]||0,r=remote[k];
+      if(!r){up[k]={n:l,t:lt};n++;}
+      else if(r.t>lt){if(r.n!==l){data[i][id]=r.n;changed=true;}TS[k]=r.t;}
+      else if(r.t<lt){up[k]={n:l,t:lt};n++;}
+    });});
+    Object.keys(remote).forEach(function(k){
+      var p=k.split('_'),i=p[0],id=p[1];if(!data[i])data[i]={};
+      if(data[i][id]===undefined){data[i][id]=remote[k].n;TS[k]=remote[k].t;changed=true;}
+    });
+    saveLocal();if(changed)render();
+    if(!n)return;
+    return fetch(DB_OK+'/c/'+code+'.json',{method:'PATCH',body:JSON.stringify(up)}).then(function(r){if(!r.ok)throw 0;});
+  }).then(function(){say('Enregistré en ligne ✓');}).catch(function(){say('Hors ligne : les prises sont gardées sur ce téléphone et seront envoyées plus tard.');});
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)sync();});
+setInterval(sync,20000);
+var sx=null;
+document.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){
+  if(sx===null)return;var d=e.changedTouches[0].clientX-sx;sx=null;
+  if(e.target.closest&&e.target.closest('#strip'))return;
+  if(d<-70&&sel<DAYS-1){sel++;render();}else if(d>70&&sel>0){sel--;render();}
+},{passive:true});
+sel=todayIdx();render();sync();
+</script>
+</body>
+</html>
