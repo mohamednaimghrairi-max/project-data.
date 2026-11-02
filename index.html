@@ -165,10 +165,10 @@ ok.onclick=function(){
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
 // ---- Synchronisation en ligne (Firebase Realtime Database, via l’API REST) ----
 var DB_URLS=['https://track-4607f-default-rtdb.europe-west1.firebasedatabase.app','https://track-4607f-default-rtdb.firebaseio.com'],DB_OK=null; // la page essaie les deux adresses possibles
-var code=null,cloud=document.createElement('div');
+var code='i9sf044d24vqhcah5imtvfxdk5czdc9m',cloud=document.createElement('div');
 cloud.className='note';cloud.style.margin='0 0 12px';
 document.getElementById('cards').before(cloud);
-try{code=(location.hash||'').slice(1)||localStorage.getItem(KEY+'-code');}catch(e){}
+try{code=(location.hash||'').slice(1)||localStorage.getItem(KEY+'-code')||code;}catch(e){}
 function validCode(c){return /^[A-Za-z0-9_-]{20,}$/.test(c||'');}
 function say(t){cloud.textContent=t;}
 function askCode(){
